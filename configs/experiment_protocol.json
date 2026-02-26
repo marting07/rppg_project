@@ -36,5 +36,5 @@
     "chrom",
     "jbss"
   ],
-  "notes": "JBSS in this repository is intentionally a simplified ICA-only educational approximation."
+  "notes": "JBSS uses manual windowed multi-component ICA with periodicity/spectral/tracking-based component selection."
 }

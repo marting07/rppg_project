@@ -7,6 +7,7 @@ import argparse
 import csv
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -49,19 +50,44 @@ def load_protocol(path: Path) -> dict:
         return json.load(f)
 
 
-def load_ground_truth(path: Path | None) -> GroundTruth | None:
+def _parse_numeric_tokens(text: str) -> list[float]:
+    matches = re.findall(r"[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?", text)
+    return [float(m) for m in matches]
+
+
+def load_ground_truth(path: Path | None, fs: float | None = None) -> GroundTruth | None:
     if path is None:
         return None
-    times: list[float] = []
-    bpm: list[float] = []
-    with path.open("r", encoding="utf-8", newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            times.append(float(row["time_s"]))
-            bpm.append(float(row["bpm"]))
-    if not times:
+
+    if path.suffix.lower() == ".csv":
+        times: list[float] = []
+        bpm: list[float] = []
+        with path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                times.append(float(row["time_s"]))
+                bpm.append(float(row["bpm"]))
+        if not times:
+            return None
+        return GroundTruth(times_s=np.array(times, dtype=np.float64), bpm=np.array(bpm, dtype=np.float64))
+
+    raw = path.read_text(encoding="utf-8")
+    lines = [line.strip() for line in raw.splitlines() if line.strip()]
+    if not lines:
         return None
-    return GroundTruth(times_s=np.array(times, dtype=np.float64), bpm=np.array(bpm, dtype=np.float64))
+    if fs is None or fs <= 0:
+        fs = 30.0
+
+    per_line_values = [_parse_numeric_tokens(line) for line in lines]
+    candidate = max(per_line_values, key=len)
+    if len(per_line_values) >= 2 and len(per_line_values[1]) >= len(candidate):
+        candidate = per_line_values[1]
+    if len(candidate) < 2:
+        return None
+
+    bpm = np.array(candidate, dtype=np.float64)
+    times = np.arange(bpm.size, dtype=np.float64) / fs
+    return GroundTruth(times_s=times, bpm=bpm)
 
 
 def deterministic_run_id(video: Path, scenario: str, methods: list[str], protocol_path: Path) -> str:
@@ -116,7 +142,7 @@ def main() -> int:
 
     methods = {name: METHOD_FACTORY[name](fs, buffer_size) for name in requested_methods}
     face_detector = FaceDetector()
-    gt = load_ground_truth(args.ground_truth)
+    gt = load_ground_truth(args.ground_truth, fs=fs)
 
     records: dict[str, list[dict[str, str]]] = {name: [] for name in requested_methods}
     frame_idx = 0
@@ -144,6 +170,9 @@ def main() -> int:
             filtered_signal = method.get_ppg_signal()
             filtered_value = float(filtered_signal[-1]) if filtered_signal.size else None
             est_bpm = method.get_hr()
+            confidence = None
+            if hasattr(method, "get_confidence"):
+                confidence = method.get_confidence()  # type: ignore[attr-defined]
             error = (est_bpm - gt_bpm) if (est_bpm is not None and gt_bpm is not None) else None
 
             records[method_name].append(
@@ -154,6 +183,7 @@ def main() -> int:
                     "raw_signal": "" if raw_value is None else f"{raw_value:.8f}",
                     "filtered_signal": "" if filtered_value is None else f"{filtered_value:.8f}",
                     "estimated_bpm": "" if est_bpm is None else f"{est_bpm:.6f}",
+                    "selection_confidence": "" if confidence is None else f"{float(confidence):.6f}",
                     "ground_truth_bpm": "" if gt_bpm is None else f"{gt_bpm:.6f}",
                     "error_bpm": "" if error is None else f"{error:.6f}",
                 }
@@ -175,6 +205,7 @@ def main() -> int:
                     "raw_signal",
                     "filtered_signal",
                     "estimated_bpm",
+                    "selection_confidence",
                     "ground_truth_bpm",
                     "error_bpm",
                 ],

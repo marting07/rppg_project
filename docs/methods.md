@@ -42,22 +42,27 @@ Primary reference:
 
 - de Haan, G., & Jeanne, V. (2013). *Robust pulse rate from chrominance-based rPPG*. IEEE Transactions on Biomedical Engineering, 60(10), 2878-2886.
 
-## 3) JBSS (Simplified Educational Variant)
+## 3) JBSS-Style Windowed ICA + Selection
 
-Current repository behavior is intentionally simplified and should be labeled accordingly in the paper.
+The JBSS implementation is now a full manual windowed pipeline with component
+selection/tracking and continuous reconstruction.
 
-Simplified equations:
+Per-window equations:
 
-- `X_t = [R_t, G_t, B_t]`
-- `Xw = whiten(X)`
-- `w <- FastICA(Xw)`
-- `s_t = (Xw @ w)[-1]`
+- `X_t = [R_t, G_t, B_t]` (windowed RGB means)
+- `X_p = preprocess(X_t)` (detrend, channel normalization, common-mode removal)
+- `S = FastICA_multi(X_p)` (multi-component source extraction)
+- `score_i = w1 * periodicity_i + w2 * spectral_i + w3 * tracking_i`
+- `i* = argmax(score_i)` (selected source)
+- `s_t = overlap_add(S[:, i*])` (continuous pulse reconstruction)
 
-Important caveat:
+Selection details:
 
-- This is **not** a full JBSS with CCA-based component selection and windowed source tracking from the literature.
-- It is an ICA-only educational approximation to support explainability and comparison.
+- `periodicity_i`: CCA-like delayed self-correlation score in physiological lag range.
+- `spectral_i`: in-band peak prominence score in 0.75-4.0 Hz.
+- `tracking_i`: continuity score versus previously selected component vector.
 
-Suggested wording in paper:
+Outcome:
 
-- "We implemented a simplified JBSS-inspired ICA baseline to maintain fully transparent, manual signal-processing steps."
+- A stable, deterministic, publishable JBSS-style manual method suitable for
+  direct comparison against Green and CHROM.

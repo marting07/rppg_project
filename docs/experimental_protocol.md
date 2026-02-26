@@ -44,6 +44,7 @@ Source: `configs/experiment_protocol.json`
 The evaluator writes:
 
 - Per-method time-series CSV
+  - Includes `selection_confidence` when method exposes component confidence (JBSS)
 - Per-method summary CSV
 - Run metadata JSON
 

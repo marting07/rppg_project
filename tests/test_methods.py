@@ -85,6 +85,34 @@ class MethodBehaviorTests(unittest.TestCase):
         assert hr_a is not None and hr_b is not None
         self.assertAlmostEqual(hr_a, hr_b, places=6)
 
+    def test_jbss_exposes_confidence_after_windows(self) -> None:
+        fs = 30.0
+        method = JBSSMethod(fs=fs, buffer_size=600, window_seconds=6.0, overlap_ratio=0.5)
+        bpm_target = 78.0
+        freq = bpm_target / 60.0
+        n = int(14.0 * fs)
+        for idx in range(n):
+            t = idx / fs
+            pulse = np.sin(2.0 * np.pi * freq * t)
+            r = 130.0 + 10.0 * pulse
+            g = 110.0 + 7.0 * pulse
+            b = 95.0 + 4.0 * pulse
+            method.update(roi_from_bgr(b=b, g=g, r=r))
+        confidence = method.get_confidence()
+        self.assertIsNotNone(confidence)
+        assert confidence is not None
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
+        self.assertIsNotNone(method.get_hr())
+
+    def test_jbss_no_output_before_minimum_window(self) -> None:
+        fs = 30.0
+        method = JBSSMethod(fs=fs, buffer_size=600, window_seconds=6.0, overlap_ratio=0.5)
+        n = int(3.0 * fs)
+        for _ in range(n):
+            method.update(roi_from_bgr(b=100.0, g=120.0, r=130.0))
+        self.assertEqual(len(method.signal_buffer), 0)
+
     def test_get_ppg_signal_handles_short_buffers(self) -> None:
         method = GreenMethod(fs=30.0, buffer_size=300)
         for _ in range(5):

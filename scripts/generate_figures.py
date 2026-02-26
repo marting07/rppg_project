@@ -24,13 +24,14 @@ def load_timeseries(path: Path) -> dict[str, np.ndarray]:
         "raw_signal": [],
         "filtered_signal": [],
         "estimated_bpm": [],
+        "selection_confidence": [],
         "ground_truth_bpm": [],
         "error_bpm": [],
     }
     with path.open("r", encoding="utf-8", newline="") as f:
         for row in csv.DictReader(f):
             columns["time_s"].append(float(row["time_s"]))
-            for key in ("raw_signal", "filtered_signal", "estimated_bpm", "ground_truth_bpm", "error_bpm"):
+            for key in ("raw_signal", "filtered_signal", "estimated_bpm", "selection_confidence", "ground_truth_bpm", "error_bpm"):
                 value = row[key].strip()
                 columns[key].append(np.nan if value == "" else float(value))
     return {k: np.array(v, dtype=np.float64) for k, v in columns.items()}
@@ -41,6 +42,7 @@ def save_method_overview(method: str, data: dict[str, np.ndarray], out_path: Pat
     raw = data["raw_signal"]
     filtered = data["filtered_signal"]
     est = data["estimated_bpm"]
+    conf = data["selection_confidence"]
     gt = data["ground_truth_bpm"]
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
@@ -76,6 +78,11 @@ def save_method_overview(method: str, data: dict[str, np.ndarray], out_path: Pat
     axes[1, 1].set_title("BPM Over Time")
     axes[1, 1].set_xlabel("Time (s)")
     axes[1, 1].set_ylabel("BPM")
+    if np.any(np.isfinite(conf)):
+        ax2 = axes[1, 1].twinx()
+        ax2.plot(t, conf, color="#444444", linewidth=0.8, alpha=0.6, label="Confidence")
+        ax2.set_ylabel("Confidence")
+        ax2.set_ylim(0.0, 1.0)
     axes[1, 1].legend(loc="best")
 
     fig.tight_layout()

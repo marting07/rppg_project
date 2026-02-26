@@ -1,0 +1,28 @@
+{
+  "selected_corpus": "ubfc_rppg_v1",
+  "datasets": [
+    {
+      "id": "ubfc_rppg_v1",
+      "status": "active",
+      "description": "Primary public corpus for this paper baseline.",
+      "expected_root": "data/public/UBFC-rPPG/DATASET_2",
+      "video_pattern": "subject*/vid.avi",
+      "ground_truth_pattern": "subject*/ground_truth.*",
+      "notes": "Ground-truth can be provided as CSV (time_s,bpm) or UBFC text format."
+    },
+    {
+      "id": "cohface",
+      "status": "planned",
+      "description": "Secondary public corpus for cross-dataset validation.",
+      "expected_root": "data/public/COHFACE",
+      "notes": "Integration planned after UBFC baseline experiments."
+    },
+    {
+      "id": "pure",
+      "status": "planned",
+      "description": "Optional stress-test corpus for motion/illumination variability.",
+      "expected_root": "data/public/PURE",
+      "notes": "Integration planned after UBFC baseline experiments."
+    }
+  ]
+}
