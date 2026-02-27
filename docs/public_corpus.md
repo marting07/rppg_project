@@ -12,8 +12,8 @@ This project now starts with a public corpus baseline so results are publishable
 
 ## Planned Expansion
 
-- **COHFACE**: cross-dataset generalization check.
-- **PURE**: additional robustness scenarios (motion/illumination).
+- **COHFACE**: cross-dataset generalization check (**pending access approval**).
+- **PURE**: request was denied (**excluded from current paper scope**).
 
 These are tracked in `configs/public_corpus.json`.
 

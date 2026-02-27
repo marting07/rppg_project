@@ -72,6 +72,7 @@ tests/
 ## Reproducible Paper Workflow
 
 1. Acquire the selected public corpus (UBFC-rPPG baseline) and place it under `data/public/UBFC-rPPG/DATASET_2`.
+   - Current status: UBFC active, COHFACE pending approval, PURE excluded (request denied).
 2. Build manifest:
 
 ```bash

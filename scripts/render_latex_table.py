@@ -47,8 +47,6 @@ def run_cmd(cmd: list[str], cwd: Path) -> None:
 
 
 def render_pdf(tex_input: Path, pdf_output: Path) -> Path:
-    if shutil.which("pdflatex") is None:
-        raise RuntimeError("pdflatex not found. Install TeX Live/MacTeX or use Overleaf.")
     if not tex_input.exists():
         raise FileNotFoundError(f"Input tex file not found: {tex_input}")
 
@@ -57,10 +55,17 @@ def render_pdf(tex_input: Path, pdf_output: Path) -> Path:
         tmp_dir = Path(td)
         src = tmp_dir / "table.tex"
         src.write_text(tex_content, encoding="utf-8")
-        run_cmd(["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "table.tex"], cwd=tmp_dir)
+        if shutil.which("pdflatex") is not None:
+            run_cmd(["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "table.tex"], cwd=tmp_dir)
+        elif shutil.which("tectonic") is not None:
+            run_cmd(["tectonic", "--keep-logs", "--keep-intermediates", "table.tex"], cwd=tmp_dir)
+        else:
+            raise RuntimeError(
+                "No LaTeX engine found. Install pdflatex (TeX Live/MacTeX) or tectonic."
+            )
         pdf_src = tmp_dir / "table.pdf"
         if not pdf_src.exists():
-            raise RuntimeError("pdflatex completed but PDF was not generated.")
+            raise RuntimeError("LaTeX engine completed but PDF was not generated.")
         pdf_output.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(pdf_src, pdf_output)
     return pdf_output

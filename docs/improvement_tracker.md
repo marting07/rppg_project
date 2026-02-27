@@ -146,3 +146,9 @@ Status: `[x]`
 - [x] Add aggregate paper-table generation (method-level means).
 - [x] Add LaTeX exporter for method-level aggregate table.
 - [x] Add PDF/PNG renderer for generated LaTeX table.
+
+Current corpus access status:
+
+- UBFC-rPPG: active.
+- COHFACE: pending approval response.
+- PURE: denied, excluded from current study scope.

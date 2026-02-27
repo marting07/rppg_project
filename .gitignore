@@ -22,3 +22,8 @@ env/
 
 # Notebook artifacts
 .ipynb_checkpoints/
+
+# Local datasets and generated experiment artifacts
+data/public/
+outputs/data/
+outputs/plots/

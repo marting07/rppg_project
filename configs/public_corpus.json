@@ -12,17 +12,17 @@
     },
     {
       "id": "cohface",
-      "status": "planned",
+      "status": "pending_access",
       "description": "Secondary public corpus for cross-dataset validation.",
       "expected_root": "data/public/COHFACE",
-      "notes": "Integration planned after UBFC baseline experiments."
+      "notes": "Access request submitted; waiting approval response."
     },
     {
       "id": "pure",
-      "status": "planned",
+      "status": "denied",
       "description": "Optional stress-test corpus for motion/illumination variability.",
       "expected_root": "data/public/PURE",
-      "notes": "Integration planned after UBFC baseline experiments."
+      "notes": "Access request denied; excluded from current paper plan."
     }
   ]
 }
