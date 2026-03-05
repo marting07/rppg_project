@@ -4,25 +4,11 @@
     {
       "id": "ubfc_rppg_v1",
       "status": "active",
-      "description": "Primary public corpus for this paper baseline.",
+      "description": "Primary and sole corpus for the current paper scope.",
       "expected_root": "data/public/UBFC-rPPG/DATASET_2",
       "video_pattern": "subject*/vid.avi",
       "ground_truth_pattern": "subject*/ground_truth.*",
       "notes": "Ground-truth can be provided as CSV (time_s,bpm) or UBFC text format."
-    },
-    {
-      "id": "cohface",
-      "status": "pending_access",
-      "description": "Secondary public corpus for cross-dataset validation.",
-      "expected_root": "data/public/COHFACE",
-      "notes": "Access request submitted; waiting approval response."
-    },
-    {
-      "id": "pure",
-      "status": "denied",
-      "description": "Optional stress-test corpus for motion/illumination variability.",
-      "expected_root": "data/public/PURE",
-      "notes": "Access request denied; excluded from current paper plan."
     }
   ]
 }

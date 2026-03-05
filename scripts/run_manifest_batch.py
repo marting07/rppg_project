@@ -23,11 +23,20 @@ def parse_args() -> argparse.Namespace:
         default=Path("outputs/data/aggregate/manifest_aggregate_summary.csv"),
         type=Path,
     )
+    parser.add_argument("--welch-window-seconds", type=float, default=None)
+    parser.add_argument("--welch-overlap-ratio", type=float, default=None)
+    parser.add_argument("--min-hr-confidence", type=float, default=None)
+    parser.add_argument("--hr-smoothing-alpha", type=float, default=None)
+    parser.add_argument("--max-hr-jump-bpm-per-s", type=float, default=None)
+    parser.add_argument("--ground-truth-mode", choices=["auto", "bpm_row", "bvp_derived"], default="bpm_row")
+    parser.add_argument("--max-lag-seconds", type=float, default=2.0)
+    parser.add_argument("--roi-fusion-mode", choices=["single", "multi_snr"], default="multi_snr")
+    parser.add_argument("--roi-snr-exponent", type=float, default=1.0)
     return parser.parse_args()
 
 
-def stable_run_id(corpus_id: str, subject_id: str, video_path: str, methods: str) -> str:
-    payload = f"{corpus_id}|{subject_id}|{video_path}|{methods}"
+def stable_run_id(corpus_id: str, subject_id: str, video_path: str, methods: str, profile: str) -> str:
+    payload = f"{corpus_id}|{subject_id}|{video_path}|{methods}|{profile}"
     digest = hashlib.sha1(payload.encode("utf-8")).hexdigest()[:10]
     return f"{corpus_id}_{subject_id}_{digest}"
 
@@ -44,7 +53,11 @@ def run_one(
     if not video_path:
         return "", f"missing video path for {corpus_id}/{subject_id}"
 
-    run_id = stable_run_id(corpus_id, subject_id, video_path, args.methods)
+    profile = (
+        f"gt={args.ground_truth_mode};lag={args.max_lag_seconds};"
+        f"roi={args.roi_fusion_mode};snr_exp={args.roi_snr_exponent}"
+    )
+    run_id = stable_run_id(corpus_id, subject_id, video_path, args.methods, profile)
     cmd = [
         python_exec,
         "scripts/offline_evaluate.py",
@@ -63,6 +76,20 @@ def run_one(
     ]
     if gt_path:
         cmd.extend(["--ground-truth", gt_path])
+    if args.welch_window_seconds is not None:
+        cmd.extend(["--welch-window-seconds", str(args.welch_window_seconds)])
+    if args.welch_overlap_ratio is not None:
+        cmd.extend(["--welch-overlap-ratio", str(args.welch_overlap_ratio)])
+    if args.min_hr_confidence is not None:
+        cmd.extend(["--min-hr-confidence", str(args.min_hr_confidence)])
+    if args.hr_smoothing_alpha is not None:
+        cmd.extend(["--hr-smoothing-alpha", str(args.hr_smoothing_alpha)])
+    if args.max_hr_jump_bpm_per_s is not None:
+        cmd.extend(["--max-hr-jump-bpm-per-s", str(args.max_hr_jump_bpm_per_s)])
+    cmd.extend(["--ground-truth-mode", str(args.ground_truth_mode)])
+    cmd.extend(["--max-lag-seconds", str(args.max_lag_seconds)])
+    cmd.extend(["--roi-fusion-mode", str(args.roi_fusion_mode)])
+    cmd.extend(["--roi-snr-exponent", str(args.roi_snr_exponent)])
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
@@ -126,6 +153,7 @@ def main() -> int:
                     "method": method_row.get("method", ""),
                     "frames": method_row.get("frames", ""),
                     "face_detected_ratio": method_row.get("face_detected_ratio", ""),
+                    "roi_quality_accept_ratio": method_row.get("roi_quality_accept_ratio", ""),
                     "valid_hr_points": method_row.get("valid_hr_points", ""),
                     "mae": method_row.get("mae", ""),
                     "rmse": method_row.get("rmse", ""),
@@ -145,6 +173,7 @@ def main() -> int:
                 "method",
                 "frames",
                 "face_detected_ratio",
+                "roi_quality_accept_ratio",
                 "valid_hr_points",
                 "mae",
                 "rmse",

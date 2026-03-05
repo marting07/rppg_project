@@ -37,13 +37,19 @@ def load_timeseries(path: Path) -> dict[str, np.ndarray]:
     return {k: np.array(v, dtype=np.float64) for k, v in columns.items()}
 
 
+def mask_gt_to_estimate_support(est: np.ndarray, gt: np.ndarray) -> np.ndarray:
+    masked = gt.copy()
+    masked[~np.isfinite(est)] = np.nan
+    return masked
+
+
 def save_method_overview(method: str, data: dict[str, np.ndarray], out_path: Path) -> None:
     t = data["time_s"]
     raw = data["raw_signal"]
     filtered = data["filtered_signal"]
     est = data["estimated_bpm"]
     conf = data["selection_confidence"]
-    gt = data["ground_truth_bpm"]
+    gt = mask_gt_to_estimate_support(est, data["ground_truth_bpm"])
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     fig.suptitle(f"{method.upper()} Method Overview", fontsize=14)

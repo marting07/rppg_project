@@ -1,6 +1,6 @@
 # rPPG Methods (Manual Implementations)
 
-This document explains the three manually implemented methods and how they map to the shared processing pipeline.
+This document explains the manually implemented methods and how they map to the shared processing pipeline.
 
 ## Shared Pipeline
 
@@ -42,27 +42,39 @@ Primary reference:
 
 - de Haan, G., & Jeanne, V. (2013). *Robust pulse rate from chrominance-based rPPG*. IEEE Transactions on Biomedical Engineering, 60(10), 2878-2886.
 
-## 3) JBSS-Style Windowed ICA + Selection
+## 3) POS Method
 
-The JBSS implementation is now a full manual windowed pipeline with component
-selection/tracking and continuous reconstruction.
+Extraction equations (windowed channel-normalized RGB traces):
 
-Per-window equations:
+- `C_n = C / mean(C) - 1`
+- `s1 = G_n - B_n`
+- `s2 = -2R_n + G_n + B_n`
+- `alpha = std(s1) / std(s2)`
+- `s = s1 + alpha * s2`
 
-- `X_t = [R_t, G_t, B_t]` (windowed RGB means)
-- `X_p = preprocess(X_t)` (detrend, channel normalization, common-mode removal)
-- `S = FastICA_multi(X_p)` (multi-component source extraction)
-- `score_i = w1 * periodicity_i + w2 * spectral_i + w3 * tracking_i`
-- `i* = argmax(score_i)` (selected source)
-- `s_t = overlap_add(S[:, i*])` (continuous pulse reconstruction)
+Interpretation:
 
-Selection details:
+- POS projects normalized color traces onto a plane orthogonal to the skin-tone direction.
+- Adaptive `alpha` balances the projected axes to suppress common illumination changes.
 
-- `periodicity_i`: CCA-like delayed self-correlation score in physiological lag range.
-- `spectral_i`: in-band peak prominence score in 0.75-4.0 Hz.
-- `tracking_i`: continuity score versus previously selected component vector.
+Primary reference:
 
-Outcome:
+- Wang, W., den Brinker, A. C., Stuijk, S., & de Haan, G. (2017). *Algorithmic Principles of Remote PPG*. IEEE Transactions on Biomedical Engineering, 64(7), 1479-1491.
 
-- A stable, deterministic, publishable JBSS-style manual method suitable for
-  direct comparison against Green and CHROM.
+## 4) SSR/2SR-Style Subspace Rotation
+
+Per-frame equations (skin pixels):
+
+- `X_t = normalize(RGB_skin_pixels_t)`
+- `C_t = cov(X_t)`
+- `U_t = eigvecs_top2(C_t)`
+- `r_t = atan2(a12 - a21, a11 + a22)` where `A = U_{t-1}^T U_t`
+
+Interpretation:
+
+- The pulse is encoded as temporal rotation of the skin-color subspace.
+- Signed rotation between consecutive 2D subspaces yields a 1D pulsatile stream.
+
+Primary reference:
+
+- Wang, W., Stuijk, S., & de Haan, G. (2015). *A Novel Algorithm for Remote Photoplethysmography: Spatial Subspace Rotation*. IEEE Transactions on Biomedical Engineering, 63(9), 1974-1984.

@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from rppg_methods import ChromMethod, GreenMethod, JBSSMethod
+from rppg_methods import ChromMethod, GreenMethod, POSMethod, SSRMethod
 
 
 def roi_from_bgr(b: float, g: float, r: float, size: int = 12) -> np.ndarray:
@@ -15,9 +15,24 @@ def roi_from_bgr(b: float, g: float, r: float, size: int = 12) -> np.ndarray:
     return roi
 
 
+def textured_roi_from_bgr(
+    b: float,
+    g: float,
+    r: float,
+    size: int = 24,
+) -> np.ndarray:
+    yy, xx = np.mgrid[0:size, 0:size].astype(np.float64)
+    pattern = 1.0 + 0.12 * np.sin(2.0 * np.pi * xx / max(size, 1)) + 0.10 * np.cos(2.0 * np.pi * yy / max(size, 1))
+    roi = np.zeros((size, size, 3), dtype=np.float64)
+    roi[:, :, 0] = np.clip(b * pattern, 0.0, 255.0)
+    roi[:, :, 1] = np.clip(g * pattern, 0.0, 255.0)
+    roi[:, :, 2] = np.clip(r * pattern, 0.0, 255.0)
+    return roi.astype(np.uint8)
+
+
 class MethodBehaviorTests(unittest.TestCase):
     def test_empty_roi_is_ignored(self) -> None:
-        methods = [GreenMethod(), ChromMethod(), JBSSMethod()]
+        methods = [GreenMethod(), ChromMethod(), POSMethod(), SSRMethod()]
         empty = np.zeros((0, 0, 3), dtype=np.uint8)
         for method in methods:
             method.update(empty)
@@ -48,33 +63,53 @@ class MethodBehaviorTests(unittest.TestCase):
         n = int(duration_s * fs)
         for idx in range(n):
             t = idx / fs
-            pulse = np.sin(2.0 * np.pi * freq * t)
-            r = 130.0 + 14.0 * pulse
-            g = 110.0 + 8.0 * pulse
-            b = 95.0 + 4.0 * pulse
+            pulse_r = np.sin(2.0 * np.pi * freq * t)
+            pulse_g = np.sin(2.0 * np.pi * freq * t + 0.3)
+            pulse_b = np.sin(2.0 * np.pi * freq * t - 0.2)
+            r = 130.0 + 14.0 * pulse_r
+            g = 110.0 + 8.0 * pulse_g
+            b = 95.0 + 4.0 * pulse_b
             method.update(roi_from_bgr(b=b, g=g, r=r))
         hr = method.get_hr()
         self.assertIsNotNone(hr)
         assert hr is not None
         self.assertLess(abs(hr - bpm_target), 7.0)
 
-    def test_jbss_is_deterministic_for_same_input(self) -> None:
+    def test_pos_recovers_known_hr_from_synthetic_signal(self) -> None:
         fs = 30.0
-        bpm_target = 75.0
+        bpm_target = 78.0
         freq = bpm_target / 60.0
-        method_a = JBSSMethod(fs=fs, buffer_size=600)
-        method_b = JBSSMethod(fs=fs, buffer_size=600)
-        duration_s = 12.0
-        n = int(duration_s * fs)
+        method = POSMethod(fs=fs, buffer_size=600)
+        n = int(12.0 * fs)
+        for idx in range(n):
+            t = idx / fs
+            pulse = np.sin(2.0 * np.pi * freq * t)
+            motion = 0.8 * np.sin(2.0 * np.pi * 0.35 * t)
+            r = 130.0 + 8.0 * pulse + 5.0 * motion
+            g = 115.0 + 11.0 * pulse - 3.5 * motion
+            b = 95.0 + 5.0 * pulse + 2.0 * motion
+            method.update(roi_from_bgr(b=b, g=g, r=r))
+        hr = method.get_hr()
+        self.assertIsNotNone(hr)
+        assert hr is not None
+        self.assertLess(abs(hr - bpm_target), 8.0)
+
+    def test_ssr_is_deterministic_for_same_input(self) -> None:
+        fs = 30.0
+        bpm_target = 70.0
+        freq = bpm_target / 60.0
+        method_a = SSRMethod(fs=fs, buffer_size=600)
+        method_b = SSRMethod(fs=fs, buffer_size=600)
+        n = int(14.0 * fs)
         rois: list[np.ndarray] = []
         for idx in range(n):
             t = idx / fs
             pulse = np.sin(2.0 * np.pi * freq * t)
-            motion = 0.6 * np.sin(2.0 * np.pi * 0.25 * t)
-            r = 120.0 + 10.0 * pulse + 6.0 * motion
-            g = 110.0 + 7.0 * pulse - 4.0 * motion
-            b = 95.0 + 5.0 * pulse + 3.0 * motion
-            rois.append(roi_from_bgr(b=b, g=g, r=r))
+            illum = 0.6 * np.sin(2.0 * np.pi * 0.22 * t)
+            r = 125.0 + 8.0 * pulse + 4.5 * illum
+            g = 110.0 + 7.0 * pulse - 3.0 * illum
+            b = 95.0 + 4.0 * pulse + 2.0 * illum
+            rois.append(textured_roi_from_bgr(b=b, g=g, r=r))
         for roi in rois:
             method_a.update(roi)
             method_b.update(roi)
@@ -84,34 +119,6 @@ class MethodBehaviorTests(unittest.TestCase):
         self.assertIsNotNone(hr_b)
         assert hr_a is not None and hr_b is not None
         self.assertAlmostEqual(hr_a, hr_b, places=6)
-
-    def test_jbss_exposes_confidence_after_windows(self) -> None:
-        fs = 30.0
-        method = JBSSMethod(fs=fs, buffer_size=600, window_seconds=6.0, overlap_ratio=0.5)
-        bpm_target = 78.0
-        freq = bpm_target / 60.0
-        n = int(14.0 * fs)
-        for idx in range(n):
-            t = idx / fs
-            pulse = np.sin(2.0 * np.pi * freq * t)
-            r = 130.0 + 10.0 * pulse
-            g = 110.0 + 7.0 * pulse
-            b = 95.0 + 4.0 * pulse
-            method.update(roi_from_bgr(b=b, g=g, r=r))
-        confidence = method.get_confidence()
-        self.assertIsNotNone(confidence)
-        assert confidence is not None
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
-        self.assertIsNotNone(method.get_hr())
-
-    def test_jbss_no_output_before_minimum_window(self) -> None:
-        fs = 30.0
-        method = JBSSMethod(fs=fs, buffer_size=600, window_seconds=6.0, overlap_ratio=0.5)
-        n = int(3.0 * fs)
-        for _ in range(n):
-            method.update(roi_from_bgr(b=100.0, g=120.0, r=130.0))
-        self.assertEqual(len(method.signal_buffer), 0)
 
     def test_get_ppg_signal_handles_short_buffers(self) -> None:
         method = GreenMethod(fs=30.0, buffer_size=300)

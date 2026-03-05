@@ -15,6 +15,7 @@ from __future__ import annotations
 import numpy as np
 
 from .base import RPPGMethod
+from utils.color_signal import robust_mean_bgr
 
 
 class GreenMethod(RPPGMethod):
@@ -22,6 +23,10 @@ class GreenMethod(RPPGMethod):
 
     def __init__(self, fs: float = 30.0, buffer_size: int = 300) -> None:
         super().__init__(fs=fs, buffer_size=buffer_size)
+        self.welch_window_seconds = 8.0
+        self.min_hr_confidence = 1.1
+        self.hr_smoothing_alpha = 0.2
+        self.max_hr_jump_bpm_per_s = 10.0
 
     def update(self, roi_frame: np.ndarray) -> None:
         """Run method stages:
@@ -30,7 +35,5 @@ class GreenMethod(RPPGMethod):
         """
         if roi_frame is None or roi_frame.size == 0:
             return
-        # OpenCV loads images in BGR order; index 1 is green
-        green_values = roi_frame[:, :, 1].astype(np.float64)
-        mean_green = float(np.mean(green_values))
+        _, mean_green, _ = robust_mean_bgr(roi_frame)
         self.update_from_value(mean_green)

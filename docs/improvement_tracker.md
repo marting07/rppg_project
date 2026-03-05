@@ -1,154 +1,138 @@
 # rPPG Improvement Tracker
 
-This file tracks implementation progress for the five agreed improvement areas.
-
 Legend:
 
 - `[ ]` pending
 - `[~]` in progress
 - `[x]` completed
 
-## 1) Method fidelity and explainability
+## Active Method Set
 
 Status: `[x]`
 
-Tasks:
+- [x] Green
+- [x] CHROM
+- [x] POS
+- [x] SSR/2SR-style
 
-- [x] Split method workflow into explicit stages (`signal_extraction`, `normalization`, `filtering`, `hr_estimation`) in code structure.
-- [x] Add clear equations and algorithm flow notes in method docs.
-- [x] Link each method implementation block to primary literature references.
-- [x] Mark simplified JBSS behavior explicitly in code and docs.
-
-## 2) Scientific comparison protocol
+## Core Implementation
 
 Status: `[x]`
 
-Tasks:
+- [x] Shared processing pipeline in `rppg_methods/base.py`
+- [x] Manual method implementations in `rppg_methods/green.py`, `rppg_methods/chrom.py`, `rppg_methods/pos.py`, `rppg_methods/ssr.py`
+- [x] Method exports aligned in `rppg_methods/__init__.py`
 
-- [x] Define fixed experimental scenarios (still, motion, lighting, distance).
-- [x] Standardize comparison parameters (window, frequency band, BPM range).
-- [x] Define required metrics (MAE, RMSE, Pearson correlation).
-- [x] Add protocol configuration file for reproducible experiments.
-
-## 3) Data and reproducibility pipeline
+## Evaluation and Scripts
 
 Status: `[x]`
 
-Tasks:
+- [x] Evaluator factory aligned to active methods (`scripts/offline_evaluate.py`)
+- [x] Sweep script choices aligned (`scripts/sweep_method_params.py`)
+- [x] Paper illustration defaults aligned (`scripts/create_paper_illustrations.py`)
+- [x] Experiment protocol methods aligned (`configs/experiment_protocol.json`)
 
-- [x] Add offline evaluation runner for recorded videos.
-- [x] Export per-frame and per-window signals to CSV.
-- [x] Save structured run metadata (method, fs, config, timestamp).
-- [x] Support deterministic outputs for repeated runs.
-
-## 4) Figure generation for paper
+## Tests
 
 Status: `[x]`
 
-Tasks:
+- [x] Behavioral tests aligned to active methods (`tests/test_methods.py`)
 
-- [x] Generate per-method signal plots (raw, filtered, PSD, BPM vs time).
-- [x] Generate comparison plots (error boxplot, Bland-Altman, failure rate).
-- [x] Save plots in publication-friendly format and naming.
-- [x] Document how to regenerate all figures from commands.
-
-## 5) Code quality and publication readiness
+## Documentation and Paper
 
 Status: `[x]`
 
-Tasks:
+- [x] README updated to active method set
+- [x] AGENTS guide updated to active method set
+- [x] Methods docs updated:
+  - `docs/methods.md`
+  - `docs/method_math_to_code.md`
+  - `docs/method_pseudocode.md`
+  - `docs/experimental_protocol.md`
+- [x] Paper draft updated to active method set (`paper/paper_content_draft.tex`)
+- [x] Bibliography aligned to active method citations (`paper/references.bib`)
+- [x] Paper asset bundle created for direct template integration:
+  - `paper/assets/method_equations.tex`
+  - `paper/assets/method_pseudocode.tex`
+  - `paper/assets/method_math_to_code_table.tex`
+  - `paper/assets/figure_assets_index.md`
+- [x] Paper base scaffold created:
+  - `paper/paper_base.tex`
+  - `paper/ieee_submission.tex`
+  - `paper/README.md`
+- [x] Draft appendices now input local paper assets instead of external docs.
+- [x] Paper draft split into modular sections:
+  - `paper/sections/01_title_abstract.tex` ... `paper/sections/12_references.tex`
+  - assembled content entrypoint: `paper/paper_content_structured.tex`
+  - `paper/paper_base.tex` updated to consume split sections.
 
-- [x] Add tests for short-buffer filtering behavior.
-- [x] Add tests for no-face / empty ROI handling.
-- [x] Add synthetic-signal tests for deterministic HR estimation.
-- [x] Add publication docs (`docs/methods.md`, `docs/experimental_protocol.md`).
-
-## Execution Task List
-
-- [x] T1 Create tracking document and folder layout.
-- [x] T2 Refactor method pipeline and add explanatory docs.
-- [x] T3 Add protocol config and experiment definitions.
-- [x] T4 Implement offline evaluator and structured outputs.
-- [x] T5 Implement figure generation scripts.
-- [x] T6 Add tests and publication docs.
-- [x] T7 Update README and tracker to final state.
-
-## Validation Notes
-
-- `python3 -m py_compile` passed for updated source files.
-- `python3 -m unittest discover -s tests -p "test_*.py"` is currently blocked in this shell due to missing installed dependencies (`scipy`, `cv2`).
-- Run `make install` then `make test` in project `.venv` to execute the test suite end-to-end.
-- JBSS upgrade files (`rppg_methods/jbss.py`, evaluator, figures, tests) pass static syntax check.
-
-## JBSS Production Upgrade (Non-Educational Implementation)
-
-Status: `[x]`
-
-### Iteration 1: Algorithm fidelity
-
-- [x] Define explicit JBSS processing stages and state model.
-- [x] Add overlapping temporal windows.
-- [x] Add configurable window length.
-- [x] Add configurable overlap ratio and hop size.
-- [x] Add RGB temporal normalization per channel.
-- [x] Add linear detrending per channel.
-- [x] Add common-mode suppression for motion/illumination robustness.
-- [x] Add frame-wise normalization after common-mode suppression.
-- [x] Replace single-component ICA with deterministic multi-component FastICA.
-- [x] Add warm-start unmixing matrix initialization for temporal continuity.
-
-### Iteration 2: Component selection and tracking
-
-- [x] Add CCA-like periodicity scoring over physiological lag range.
-- [x] Add spectral quality scoring in physiological frequency band.
-- [x] Combine periodicity + spectral into ranking function.
-- [x] Add temporal tracking score based on component-vector continuity.
-- [x] Build weighted composite score for component selection.
-- [x] Compute confidence from winner margin over runner-up.
-- [x] Persist selected component state for next window.
-
-### Iteration 3: Signal reconstruction
-
-- [x] Reconstruct selected component per window.
-- [x] Normalize reconstructed component amplitude.
-- [x] Emit frame-rate pulse stream via pending-sample queue.
-- [x] Add overlap boundary blending logic for continuity.
-- [x] Integrate reconstructed samples into base HR estimation pipeline.
-- [x] Expose selection confidence through public method.
-
-### Iteration 4: Validation and integration
-
-- [x] Ensure deterministic behavior with fixed initialization strategy.
-- [x] Keep compatibility with existing app update/get_hr flow.
-- [x] Keep compatibility with offline evaluator interface.
-- [x] Update method docs to reflect production-style JBSS implementation.
-- [x] Keep existing synthetic determinism test coverage applicable.
-- [x] Verify static syntax correctness with `py_compile`.
-
-### Iteration 5: Paper readiness artifacts
-
-- [x] Remove "educational approximation" framing in method code.
-- [x] Add publication-style method description in `docs/methods.md`.
-- [x] Keep protocol/evaluation scripts compatible with updated JBSS class.
-
-## Public Corpus Integration
+## Current Table Artifacts
 
 Status: `[x]`
 
-- [x] Select initial public corpus baseline (UBFC-rPPG v1).
-- [x] Add public corpus config file (`configs/public_corpus.json`).
-- [x] Add public corpus execution documentation (`docs/public_corpus.md`).
-- [x] Add manifest generation script for selected corpus.
-- [x] Add `make corpus-manifest` command for reproducible indexing.
-- [x] Extend evaluator to parse UBFC-style text ground truth in addition to CSV.
-- [x] Update README workflow to public-corpus-first process.
-- [x] Add batch manifest runner for end-to-end corpus execution.
-- [x] Add aggregate paper-table generation (method-level means).
-- [x] Add LaTeX exporter for method-level aggregate table.
-- [x] Add PDF/PNG renderer for generated LaTeX table.
+- [x] `outputs/data/aggregate/ubfc_full_active_methods_method_means.csv`
+- [x] `outputs/data/aggregate/ubfc_full_active_method_means.tex`
+- [x] `outputs/data/aggregate/ubfc_full_active_method_means.pdf`
+- [x] `outputs/data/aggregate/ubfc_full_active_method_means.png`
 
-Current corpus access status:
+Current 42-subject UBFC means (active methods, BPM-row GT + multi-ROI SNR fusion):
 
-- UBFC-rPPG: active.
-- COHFACE: pending approval response.
-- PURE: denied, excluded from current study scope.
+- [x] `chrom`: MAE `5.973`, RMSE `7.690`, corr `0.395`, failure `0.183`
+- [x] `green`: MAE `13.450`, RMSE `14.864`, corr `0.398`, failure `0.437`
+- [x] `pos`: MAE `6.965`, RMSE `8.979`, corr `0.341`, failure `0.227`
+- [x] `ssr`: MAE `21.327`, RMSE `23.007`, corr `0.113`, failure `0.748`
+
+## Current Figure Artifacts
+
+Status: `[x]`
+
+- [x] `outputs/paper/figures/paper_subject1_active_v2/`
+- [x] `outputs/paper/figures/paper_subject1_active_v2_overview/`
+- [x] `outputs/paper/figures/ubfc_rppg_v1_subject1_f87e84d150/`
+- [x] `outputs/plots/ubfc_rppg_v1_subject1_f87e84d150/`
+
+## Validation
+
+Status: `[x]`
+
+- [x] Local validation passed (`py_compile`, unit tests)
+- [x] Full UBFC batch rerun with `--methods green,chrom,pos,ssr`
+
+## Ground Truth Alignment Pass
+
+Status: `[x]`
+
+- [x] Added UBFC GT mode selection in evaluator (`auto`, `bpm_row`, `bvp_derived`) in `scripts/offline_evaluate.py`
+- [x] Added BVP-derived GT BPM path for UBFC three-row files in `scripts/offline_evaluate.py`
+- [x] Added per-method lag optimization (`--max-lag-seconds`) before metrics in `scripts/offline_evaluate.py`
+- [x] Added lag/source metadata outputs (`summary.csv`, `metadata.json`)
+- [x] Updated plot rendering to show GT only where estimates are valid:
+  - `scripts/create_paper_illustrations.py`
+  - `scripts/generate_figures.py`
+- [x] Full UBFC manifest rerun completed with GT alignment (`42/42` successful):
+  - `outputs/data/aggregate/ubfc_full_active_methods_gtfix.csv`
+  - `outputs/data/aggregate/ubfc_full_active_methods_gtfix_method_means.csv`
+  - `outputs/data/aggregate/ubfc_full_active_methods_gtfix_runs.csv`
+
+## Multi-ROI Fusion Pass
+
+Status: `[x]`
+
+- [x] Added forehead+cheeks ROI extraction helpers in `utils/roi.py`
+- [x] Added evaluator ROI fusion modes (`single`, `multi_snr`) and SNR-exponent weighting in `scripts/offline_evaluate.py`
+- [x] Switched default comparison GT mode back to `bpm_row` in evaluator and batch runner
+- [x] Added batch/Makefile flags for ROI fusion and GT mode:
+  - `scripts/run_manifest_batch.py`
+  - `Makefile`
+- [x] Full UBFC manifest rerun completed with `bpm_row + multi_snr` (`42/42` successful):
+  - `outputs/data/aggregate/ubfc_full_active_methods_bpmrow_multi.csv`
+  - `outputs/data/aggregate/ubfc_full_active_methods_bpmrow_multi_method_means.csv`
+  - `outputs/data/aggregate/ubfc_full_active_methods_bpmrow_multi_runs.csv`
+
+## Scope Alignment
+
+Status: `[x]`
+
+- [x] Repository scope updated to UBFC-rPPG Dataset 2 only.
+- [x] Removed references to unavailable corpora from paper/docs/configs.
+- [x] Updated wording for publication-safe, reproducible-method framing.

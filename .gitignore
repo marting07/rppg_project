@@ -20,6 +20,33 @@ env/
 *.log
 *.tmp
 
+# LaTeX build artifacts (keep .tex/.bib sources tracked)
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+*.dvi
+*.nav
+*.snm
+*.vrb
+missfont.log
+
+# Generated documents/images (source files remain tracked)
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.svg
+
 # Notebook artifacts
 .ipynb_checkpoints/
 
@@ -27,3 +54,6 @@ env/
 data/public/
 outputs/data/
 outputs/plots/
+outputs/paper/
+paper
+AGENTS.md

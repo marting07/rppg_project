@@ -4,7 +4,7 @@ This application provides a simple graphical user interface (GUI)
 implemented with PySide6. It captures video from the default camera,
 detects a face using a Haar cascade classifier, extracts the
 forehead region of interest (ROI), and processes it using one of
-several rPPG methods (Green, CHROM, JBSS) to estimate the user's
+several rPPG methods (Green, CHROM, POS, SSR) to estimate the user's
 heart rate. The current heart rate and the filtered photoplethysmogram
 (PPG) waveform are displayed in the UI.
 
@@ -22,13 +22,15 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import cv2  # type: ignore
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets  # type: ignore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # type: ignore
 from matplotlib.figure import Figure
 
 from rppg_methods.green import GreenMethod
 from rppg_methods.chrom import ChromMethod
-from rppg_methods.jbss import JBSSMethod
+from rppg_methods.pos import POSMethod
+from rppg_methods.ssr import SSRMethod
 from utils.roi import FaceDetector, extract_forehead_roi
 
 if TYPE_CHECKING:
@@ -63,7 +65,8 @@ class RPPGApp(QtWidgets.QMainWindow):
         self.methods: list[MethodEntry] = [
             MethodEntry("Green", GreenMethod(fs=self.fs, buffer_size=int(self.fs * 10))),
             MethodEntry("CHROM", ChromMethod(fs=self.fs, buffer_size=int(self.fs * 10))),
-            MethodEntry("JBSS", JBSSMethod(fs=self.fs, buffer_size=int(self.fs * 10))),
+            MethodEntry("POS", POSMethod(fs=self.fs, buffer_size=int(self.fs * 10))),
+            MethodEntry("SSR", SSRMethod(fs=self.fs, buffer_size=int(self.fs * 10))),
         ]
         self.current_method: MethodEntry = self.methods[0]
 

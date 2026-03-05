@@ -1,6 +1,6 @@
 {
   "study_name": "Manual rPPG Method Comparison",
-  "version": "1.0",
+  "version": "1.1",
   "common_parameters": {
     "fs_fallback_hz": 30.0,
     "buffer_seconds": 10,
@@ -31,10 +31,6 @@
     }
   ],
   "metrics": ["mae", "rmse", "pearson_correlation"],
-  "methods": [
-    "green",
-    "chrom",
-    "jbss"
-  ],
-  "notes": "JBSS uses manual windowed multi-component ICA with periodicity/spectral/tracking-based component selection."
+  "methods": ["green", "chrom", "pos", "ssr"],
+  "notes": "Manual implementations only: Green, CHROM, POS, and SSR/2SR-style."
 }
