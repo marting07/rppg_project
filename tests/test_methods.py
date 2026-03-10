@@ -127,26 +127,34 @@ class MethodBehaviorTests(unittest.TestCase):
         signal = method.get_ppg_signal()
         self.assertEqual(signal.size, 5)
 
-    def test_optional_methods_emit_hr_on_synthetic_input(self) -> None:
+    def test_optional_methods_recover_synthetic_hr_with_motion_contamination(self) -> None:
         fs = 30.0
         bpm_target = 75.0
         freq = bpm_target / 60.0
-        methods = [ICAMethod(fs=fs, buffer_size=600), PBVMethod(fs=fs, buffer_size=600), LGIMethod(fs=fs, buffer_size=600)]
+        methods = {
+            "ica": ICAMethod(fs=fs, buffer_size=600),
+            "pbv": PBVMethod(fs=fs, buffer_size=600),
+            "lgi": LGIMethod(fs=fs, buffer_size=600),
+        }
         n = int(14.0 * fs)
         for idx in range(n):
             t = idx / fs
             pulse = np.sin(2.0 * np.pi * freq * t)
-            r = 125.0 + 10.0 * pulse
-            g = 110.0 + 9.0 * np.sin(2.0 * np.pi * freq * t + 0.25)
-            b = 95.0 + 6.0 * np.sin(2.0 * np.pi * freq * t - 0.15)
+            motion = 0.9 * np.sin(2.0 * np.pi * 0.33 * t + 0.2)
+            illum = 0.7 * np.sin(2.0 * np.pi * 0.18 * t - 0.15)
+            r = 125.0 + 10.0 * pulse + 6.0 * motion + 4.0 * illum
+            g = 110.0 + 9.0 * np.sin(2.0 * np.pi * freq * t + 0.25) - 4.5 * motion + 3.0 * illum
+            b = 95.0 + 6.0 * np.sin(2.0 * np.pi * freq * t - 0.15) + 2.5 * motion - 2.0 * illum
             roi = textured_roi_from_bgr(b=b, g=g, r=r)
-            for method in methods:
+            for method in methods.values():
                 method.update(roi)
-        for method in methods:
+
+        tolerances = {"ica": 8.0, "pbv": 8.0, "lgi": 9.0}
+        for name, method in methods.items():
             hr = method.get_hr()
             self.assertIsNotNone(hr)
             assert hr is not None
-            self.assertTrue(45.0 <= hr <= 180.0)
+            self.assertLess(abs(hr - bpm_target), tolerances[name])
 
 
 if __name__ == "__main__":
